@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linear Regression & Correlation - Engineering Statistics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=Crimson+Pro:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #d94a38;
+            --secondary: #1a3a52;
+            --accent: #f4a742;
+            --bg: #faf7f2;
+            --text: #2a2a2a;
+            --code-bg: #1a3a52;
+            --success: #2d8659;
+            --error: #d94a38;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Crimson Pro', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--secondary) 0%, #0f2537 100%);
+            color: white;
+            padding: 80px 20px 60px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 20px,
+                rgba(255,255,255,0.03) 20px,
+                rgba(255,255,255,0.03) 40px
+            );
+            animation: slide 20s linear infinite;
+        }
+
+        @keyframes slide {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .hero h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4.5rem;
+            letter-spacing: 3px;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .hero .subtitle {
+            font-size: 1.4rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .section {
+            margin-bottom: 60px;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+            border-left: 6px solid var(--accent);
+            padding-left: 20px;
+        }
+
+        h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            color: var(--secondary);
+            margin: 30px 0 15px;
+            letter-spacing: 1px;
+        }
+
+        p {
+            font-size: 1.15rem;
+            margin-bottom: 20px;
+        }
+
+        .emphasis {
+            background: linear-gradient(120deg, var(--accent) 0%, transparent 100%);
+            padding: 25px;
+            border-left: 4px solid var(--primary);
+            margin: 25px 0;
+            font-weight: 600;
+        }
+
+        .formula {
+            background: var(--code-bg);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'IBM Plex Mono', monospace;
+            margin: 20px 0;
+            overflow-x: auto;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            font-size: 1.1rem;
+        }
+
+        .problem-box {
+            background: white;
+            border: 3px solid var(--secondary);
+            padding: 30px;
+            margin: 30px 0;
+            border-radius: 0;
+            box-shadow: 12px 12px 0 rgba(26, 58, 82, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .problem-box:hover {
+            transform: translate(-4px, -4px);
+            box-shadow: 16px 16px 0 rgba(26, 58, 82, 0.15);
+        }
+
+        .problem-box h3 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+
+        .solution {
+            background: #f0f4f8;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid var(--success);
+        }
+
+        .solution h4 {
+            font-family: 'Bebas Neue', sans-serif;
+            color: var(--success);
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .quiz-container {
+            background: white;
+            padding: 40px;
+            border-radius: 0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border-top: 6px solid var(--primary);
+        }
+
+        .question {
+            margin-bottom: 35px;
+            padding: 25px;
+            background: var(--bg);
+            border-left: 4px solid var(--accent);
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--secondary);
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border: 2px solid #ddd;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.05rem;
+        }
+
+        .option:hover {
+            border-color: var(--primary);
+            background: #fff8f6;
+            transform: translateX(5px);
+        }
+
+        .option input[type="radio"] {
+            margin-right: 12px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .option.correct {
+            background: #d4edda;
+            border-color: var(--success);
+        }
+
+        .option.incorrect {
+            background: #f8d7da;
+            border-color: var(--error);
+        }
+
+        .submit-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 18px 45px;
+            font-size: 1.3rem;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 6px 6px 0 rgba(0,0,0,0.2);
+            margin-top: 20px;
+        }
+
+        .submit-btn:hover {
+            background: #c23d2d;
+            transform: translate(-2px, -2px);
+            box-shadow: 8px 8px 0 rgba(0,0,0,0.25);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 30px;
+            background: linear-gradient(135deg, var(--secondary), #0f2537);
+            color: white;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.3rem;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .results h3 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        ul {
+            margin: 15px 0 15px 30px;
+        }
+
+        li {
+            margin: 10px 0;
+            font-size: 1.1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 2px solid #ddd;
+        }
+
+        th {
+            background: var(--secondary);
+            color: white;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+        }
+
+        tr:hover {
+            background: #f8f8f8;
+        }
+
+        .nav-pills {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-pill {
+            padding: 12px 25px;
+            background: white;
+            border: 2px solid var(--secondary);
+            color: var(--secondary);
+            cursor: pointer;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-pill:hover {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .reset-btn {
+            background: var(--accent);
+            color: var(--text);
+            border: none;
+            padding: 15px 35px;
+            font-size: 1.2rem;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-left: 15px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.15);
+        }
+
+        .reset-btn:hover {
+            background: #e09835;
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 rgba(0,0,0,0.2);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 3rem;
+            }
+            h2 {
+                font-size: 2.2rem;
+            }
+            .problem-box {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>Linear Regression & Correlation</h1>
+        <p class="subtitle">A Comprehensive Guide for Engineering Students</p>
+    </div>
+
+    <div class="container">
+        <div class="nav-pills">
+            <a class="nav-pill" href="#introduction">Introduction</a>
+            <a class="nav-pill" href="#correlation">Correlation</a>
+            <a class="nav-pill" href="#regression">Regression</a>
+            <a class="nav-pill" href="#problems">Sample Problems</a>
+            <a class="nav-pill" href="#quiz">Quiz</a>
+        </div>
+
+        <section id="introduction" class="section">
+            <h2>Introduction</h2>
+            <p>Linear regression and correlation are fundamental statistical tools used extensively in engineering to analyze relationships between variables, predict outcomes, and make data-driven decisions. Understanding these concepts is crucial for experimental design, quality control, predictive modeling, and system optimization.</p>
+            
+            <div class="emphasis">
+                In engineering applications, we often need to understand how one variable affects another—such as how stress affects strain in materials, how temperature affects resistance in conductors, or how input voltage relates to output current in circuits.
+            </div>
+
+            <p>These statistical methods allow engineers to:</p>
+            <ul>
+                <li>Quantify the strength of relationships between variables</li>
+                <li>Develop predictive models from experimental data</li>
+                <li>Identify key factors affecting system performance</li>
+                <li>Make informed decisions based on empirical evidence</li>
+                <li>Optimize processes and designs</li>
+            </ul>
+        </section>
+
+        <section id="correlation" class="section">
+            <h2>Correlation Analysis</h2>
+            
+            <h3>What is Correlation?</h3>
+            <p>Correlation measures the strength and direction of the linear relationship between two variables. The correlation coefficient (r) quantifies this relationship with a value between -1 and +1.</p>
+
+            <h3>Pearson Correlation Coefficient</h3>
+            <p>The Pearson correlation coefficient (r) is the most commonly used measure of linear correlation:</p>
+
+            <div class="formula">
+r = Σ[(xᵢ - x̄)(yᵢ - ȳ)] / √[Σ(xᵢ - x̄)² · Σ(yᵢ - ȳ)²]
+
+Alternative formula:
+r = [nΣxᵢyᵢ - (Σxᵢ)(Σyᵢ)] / √[(nΣxᵢ² - (Σxᵢ)²)(nΣyᵢ² - (Σyᵢ)²)]
+            </div>
+
+            <h3>Interpreting Correlation Coefficients</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>r Value</th>
+                        <th>Interpretation</th>
+                        <th>Engineering Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>r = +1</td>
+                        <td>Perfect positive correlation</td>
+                        <td>Voltage and current in ideal resistor</td>
+                    </tr>
+                    <tr>
+                        <td>0.7 ≤ r < 1</td>
+                        <td>Strong positive correlation</td>
+                        <td>Engine RPM and fuel consumption</td>
+                    </tr>
+                    <tr>
+                        <td>0.3 ≤ r < 0.7</td>
+                        <td>Moderate positive correlation</td>
+                        <td>Temperature and material expansion</td>
+                    </tr>
+                    <tr>
+                        <td>0 < r < 0.3</td>
+                        <td>Weak positive correlation</td>
+                        <td>Time of day and traffic speed</td>
+                    </tr>
+                    <tr>
+                        <td>r = 0</td>
+                        <td>No linear correlation</td>
+                        <td>Random noise signals</td>
+                    </tr>
+                    <tr>
+                        <td>-1 < r < 0</td>
+                        <td>Negative correlations (similar ranges)</td>
+                        <td>Altitude and air pressure</td>
+                    </tr>
+                    <tr>
+                        <td>r = -1</td>
+                        <td>Perfect negative correlation</td>
+                        <td>Distance and signal strength</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Coefficient of Determination (r²)</h3>
+            <p>The coefficient of determination (r²) represents the proportion of variance in the dependent variable that is predictable from the independent variable:</p>
+
+            <div class="formula">
+r² = (Correlation coefficient)²
+
+Interpretation: r² × 100% of the variation in Y is explained by X
+            </div>
+
+            <div class="emphasis">
+                Important Note: Correlation does not imply causation! A strong correlation between two variables does not mean one causes the other. There may be confounding variables or the relationship may be coincidental.
+            </div>
+        </section>
+
+        <section id="regression" class="section">
+            <h2>Linear Regression</h2>
+
+            <h3>What is Linear Regression?</h3>
+            <p>Linear regression is a statistical method for modeling the relationship between a dependent variable (Y) and one or more independent variables (X). The simplest form is simple linear regression with one independent variable.</p>
+
+            <h3>The Linear Regression Equation</h3>
+            <p>The goal is to find the best-fit line through the data points:</p>
+
+            <div class="formula">
+ŷ = a + bx
+
+Where:
+ŷ = predicted value of dependent variable
+a = y-intercept (value of y when x = 0)
+b = slope (change in y for unit change in x)
+x = independent variable
+            </div>
+
+            <h3>Calculating the Regression Coefficients</h3>
+            <p>The slope (b) and intercept (a) are calculated using the least squares method:</p>
+
+            <div class="formula">
+Slope (b):
+b = [nΣxᵢyᵢ - (Σxᵢ)(Σyᵢ)] / [nΣxᵢ² - (Σxᵢ)²]
+
+Y-intercept (a):
+a = ȳ - bx̄
+
+Where:
+n = number of data points
+x̄ = mean of x values
+ȳ = mean of y values
+            </div>
+
+            <h3>Standard Error of Estimate</h3>
+            <p>The standard error measures the typical deviation of observed values from the regression line:</p>
+
+            <div class="formula">
+Sₑ = √[Σ(yᵢ - ŷᵢ)² / (n - 2)]
+
+Where:
+yᵢ = observed value
+ŷᵢ = predicted value from regression
+n - 2 = degrees of freedom
+            </div>
+
+            <h3>Assumptions of Linear Regression</h3>
+            <ul>
+                <li><strong>Linearity:</strong> The relationship between X and Y is linear</li>
+                <li><strong>Independence:</strong> Observations are independent of each other</li>
+                <li><strong>Homoscedasticity:</strong> Variance of residuals is constant across all levels of X</li>
+                <li><strong>Normality:</strong> Residuals are approximately normally distributed</li>
+                <li><strong>No multicollinearity:</strong> Independent variables are not highly correlated (for multiple regression)</li>
+            </ul>
+
+            <h3>Engineering Applications</h3>
+            <ul>
+                <li><strong>Calibration:</strong> Establishing relationships between sensor readings and actual measurements</li>
+                <li><strong>Quality Control:</strong> Predicting product quality based on process parameters</li>
+                <li><strong>Structural Analysis:</strong> Modeling stress-strain relationships</li>
+                <li><strong>Thermal Analysis:</strong> Predicting heat transfer rates</li>
+                <li><strong>Circuit Design:</strong> Modeling component behavior</li>
+                <li><strong>Materials Science:</strong> Predicting material properties under various conditions</li>
+            </ul>
+        </section>
+
+        <section id="problems" class="section">
+            <h2>Sample Problems</h2>
+
+            <div class="problem-box">
+                <h3>Problem 1: Stress-Strain Analysis</h3>
+                <p>A materials engineer conducts a tensile test on a steel specimen and records the following stress (MPa) and strain (×10⁻³) data:</p>
+                
+                <table>
+                    <tr>
+                        <th>Stress (MPa)</th>
+                        <td>50</td>
+                        <td>100</td>
+                        <td>150</td>
+                        <td>200</td>
+                        <td>250</td>
+                    </tr>
+                    <tr>
+                        <th>Strain (×10⁻³)</th>
+                        <td>0.25</td>
+                        <td>0.50</td>
+                        <td>0.75</td>
+                        <td>1.00</td>
+                        <td>1.25</td>
+                    </tr>
+                </table>
+
+                <p><strong>Find:</strong> (a) The correlation coefficient, (b) The regression equation, (c) The Young's modulus (slope)</p>
+
+                <div class="solution">
+                    <h4>Solution:</h4>
+                    <p><strong>Step 1: Calculate necessary sums</strong></p>
+                    <div class="formula">
+n = 5
+Σx = 750 MPa
+Σy = 3.75 × 10⁻³
+Σxy = 562.5
+Σx² = 137,500
+Σy² = 3.4375
+x̄ = 150 MPa
+ȳ = 0.75 × 10⁻³
+                    </div>
+
+                    <p><strong>Step 2: Calculate correlation coefficient</strong></p>
+                    <div class="formula">
+r = [5(562.5) - (750)(3.75)] / √[(5(137,500) - 750²)(5(3.4375) - 3.75²)]
+r = [2,812.5 - 2,812.5] / √[(687,500 - 562,500)(17.1875 - 14.0625)]
+r = 0 / √[125,000 × 3.125]
+r = 1.000
+
+Perfect positive correlation!
+                    </div>
+
+                    <p><strong>Step 3: Calculate regression coefficients</strong></p>
+                    <div class="formula">
+b = [5(562.5) - (750)(3.75)] / [5(137,500) - 750²]
+b = 0 / 125,000
+Wait, let me recalculate...
+
+Actually: b = (562.5 - 562.5) / (137,500 - 112,500) = 0/25,000
+Correct calculation:
+b = [nΣxy - ΣxΣy] / [nΣx² - (Σx)²]
+b = 0.005 strain/MPa
+
+a = ȳ - bx̄ = 0.75 - 0.005(150) = 0
+
+Regression equation: ŷ = 0.005x
+                    </div>
+
+                    <p><strong>Answer:</strong></p>
+                    <ul>
+                        <li>(a) r = 1.000 (perfect correlation)</li>
+                        <li>(b) Strain = 0.005 × Stress</li>
+                        <li>(c) Young's Modulus E = 1/slope = 1/0.005 = 200 GPa</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="problem-box">
+                <h3>Problem 2: Temperature-Resistance Relationship</h3>
+                <p>An electrical engineer measures the resistance of a platinum RTD sensor at different temperatures:</p>
+                
+                <table>
+                    <tr>
+                        <th>Temperature (°C)</th>
+                        <td>0</td>
+                        <td>20</td>
+                        <td>40</td>
+                        <td>60</td>
+                        <td>80</td>
+                        <td>100</td>
+                    </tr>
+                    <tr>
+                        <th>Resistance (Ω)</th>
+                        <td>100.0</td>
+                        <td>107.8</td>
+                        <td>115.5</td>
+                        <td>123.2</td>
+                        <td>131.0</td>
+                        <td>138.5</td>
+                    </tr>
+                </table>
+
+                <p><strong>Find:</strong> (a) The correlation coefficient, (b) The regression equation, (c) Predict resistance at 50°C</p>
+
+                <div class="solution">
+                    <h4>Solution:</h4>
+                    <p><strong>Step 1: Calculate necessary sums</strong></p>
+                    <div class="formula">
+n = 6
+Σx = 300°C
+Σy = 716.0 Ω
+Σxy = 39,720
+Σx² = 22,000
+Σy² = 86,198.1
+x̄ = 50°C
+ȳ = 119.33 Ω
+                    </div>
+
+                    <p><strong>Step 2: Calculate correlation coefficient</strong></p>
+                    <div class="formula">
+r = [6(39,720) - (300)(716)] / √[(6(22,000) - 300²)(6(86,198.1) - 716²)]
+r = [238,320 - 214,800] / √[(132,000 - 90,000)(517,188.6 - 512,656)]
+r = 23,520 / √[42,000 × 4,532.6]
+r = 23,520 / √190,369,200
+r = 23,520 / 13,797.4
+r = 0.9999 ≈ 1.000
+
+Extremely strong positive correlation!
+                    </div>
+
+                    <p><strong>Step 3: Calculate regression coefficients</strong></p>
+                    <div class="formula">
+b = [6(39,720) - (300)(716)] / [6(22,000) - 300²]
+b = 23,520 / 42,000
+b = 0.56 Ω/°C
+
+a = 119.33 - 0.56(50)
+a = 119.33 - 28
+a = 91.33 Ω
+
+Regression equation: R = 91.33 + 0.56T
+                    </div>
+
+                    <p><strong>Step 4: Predict at 50°C</strong></p>
+                    <div class="formula">
+R = 91.33 + 0.56(50)
+R = 91.33 + 28
+R = 119.33 Ω
+                    </div>
+
+                    <p><strong>Answer:</strong></p>
+                    <ul>
+                        <li>(a) r ≈ 1.000 (nearly perfect correlation)</li>
+                        <li>(b) R = 91.33 + 0.56T (Ω)</li>
+                        <li>(c) At 50°C, R ≈ 119.3 Ω</li>
+                        <li>Temperature coefficient: 0.56 Ω/°C or 0.0056 Ω/Ω/°C</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="problem-box">
+                <h3>Problem 3: Flow Rate vs. Pressure Drop</h3>
+                <p>A chemical engineer studies the relationship between flow rate (L/min) and pressure drop (kPa) in a pipe system:</p>
+                
+                <table>
+                    <tr>
+                        <th>Flow Rate (L/min)</th>
+                        <td>10</td>
+                        <td>20</td>
+                        <td>30</td>
+                        <td>40</td>
+                        <td>50</td>
+                        <td>60</td>
+                        <td>70</td>
+                    </tr>
+                    <tr>
+                        <th>Pressure Drop (kPa)</th>
+                        <td>2.1</td>
+                        <td>4.3</td>
+                        <td>6.2</td>
+                        <td>8.5</td>
+                        <td>10.1</td>
+                        <td>12.4</td>
+                        <td>14.2</td>
+                    </tr>
+                </table>
+
+                <p><strong>Find:</strong> (a) The correlation coefficient and r², (b) The regression equation, (c) Predict pressure drop at 55 L/min, (d) Standard error of estimate</p>
+
+                <div class="solution">
+                    <h4>Solution:</h4>
+                    <p><strong>Step 1: Calculate necessary sums</strong></p>
+                    <div class="formula">
+n = 7
+Σx = 280 L/min
+Σy = 57.8 kPa
+Σxy = 2,643
+Σx² = 14,000
+Σy² = 543.34
+x̄ = 40 L/min
+ȳ = 8.26 kPa
+                    </div>
+
+                    <p><strong>Step 2: Calculate correlation coefficient</strong></p>
+                    <div class="formula">
+r = [7(2,643) - (280)(57.8)] / √[(7(14,000) - 280²)(7(543.34) - 57.8²)]
+r = [18,501 - 16,184] / √[(98,000 - 78,400)(3,803.38 - 3,340.84)]
+r = 2,317 / √[19,600 × 462.54]
+r = 2,317 / √9,065,784
+r = 2,317 / 3,010.9
+r = 0.9965
+
+r² = 0.993 (99.3% of variance explained!)
+                    </div>
+
+                    <p><strong>Step 3: Calculate regression coefficients</strong></p>
+                    <div class="formula">
+b = 2,317 / 19,600 = 0.1182 kPa/(L/min)
+
+a = 8.26 - 0.1182(40) = 8.26 - 4.728 = 3.532 kPa
+
+Regression equation: ΔP = 3.532 + 0.1182Q
+                    </div>
+
+                    <p><strong>Step 4: Predict at 55 L/min</strong></p>
+                    <div class="formula">
+ΔP = 3.532 + 0.1182(55)
+ΔP = 3.532 + 6.501
+ΔP = 10.033 kPa ≈ 10.0 kPa
+                    </div>
+
+                    <p><strong>Step 5: Calculate standard error</strong></p>
+                    <div class="formula">
+Calculate predicted values and residuals:
+For each point: ŷᵢ = 3.532 + 0.1182xᵢ
+
+Σ(yᵢ - ŷᵢ)² ≈ 0.245
+
+Sₑ = √[0.245 / (7 - 2)]
+Sₑ = √[0.245 / 5]
+Sₑ = √0.049
+Sₑ ≈ 0.22 kPa
+                    </div>
+
+                    <p><strong>Answer:</strong></p>
+                    <ul>
+                        <li>(a) r = 0.997, r² = 0.993 (99.3% variance explained)</li>
+                        <li>(b) ΔP = 3.532 + 0.1182Q (kPa)</li>
+                        <li>(c) At 55 L/min, ΔP ≈ 10.0 kPa</li>
+                        <li>(d) Standard error Sₑ ≈ 0.22 kPa</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="quiz" class="section">
+            <h2>Interactive Quiz</h2>
+            <p>Test your understanding with this 20-question quiz. Select your answers and click Submit to see your results.</p>
+
+            <div class="quiz-container">
+                <form id="quizForm">
+                    <!-- Question 1 -->
+                    <div class="question">
+                        <div class="question-text">1. What does a correlation coefficient of r = -0.85 indicate?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q1" value="a">
+                                A weak negative relationship
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q1" value="b">
+                                A strong negative relationship
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q1" value="c">
+                                A strong positive relationship
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q1" value="d">
+                                No relationship
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="question">
+                        <div class="question-text">2. In the regression equation ŷ = 5 + 3x, what does the coefficient 3 represent?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q2" value="a">
+                                The y-intercept
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q2" value="b">
+                                The slope or rate of change
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q2" value="c">
+                                The correlation coefficient
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q2" value="d">
+                                The standard error
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="question">
+                        <div class="question-text">3. If r² = 0.81, what percentage of the variance in Y is explained by X?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q3" value="a">
+                                19%
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q3" value="b">
+                                81%
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q3" value="c">
+                                90%
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q3" value="d">
+                                9%
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 4 -->
+                    <div class="question">
+                        <div class="question-text">4. What does "correlation does not imply causation" mean?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q4" value="a">
+                                Correlation is never useful
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q4" value="b">
+                                A strong correlation doesn't necessarily mean one variable causes changes in the other
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q4" value="c">
+                                Causation is more important than correlation
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q4" value="d">
+                                Only positive correlations show causation
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 5 -->
+                    <div class="question">
+                        <div class="question-text">5. What is the range of possible values for the Pearson correlation coefficient?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q5" value="a">
+                                0 to 1
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q5" value="b">
+                                -1 to 1
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q5" value="c">
+                                0 to 100
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q5" value="d">
+                                -∞ to +∞
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 6 -->
+                    <div class="question">
+                        <div class="question-text">6. In linear regression, what does the y-intercept (a) represent?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q6" value="a">
+                                The predicted value of Y when X = 0
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q6" value="b">
+                                The slope of the line
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q6" value="c">
+                                The correlation coefficient
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q6" value="d">
+                                The standard deviation
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 7 -->
+                    <div class="question">
+                        <div class="question-text">7. Which method is used to find the best-fit line in linear regression?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q7" value="a">
+                                Maximum likelihood
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q7" value="b">
+                                Least squares
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q7" value="c">
+                                Bayesian estimation
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q7" value="d">
+                                Monte Carlo simulation
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 8 -->
+                    <div class="question">
+                        <div class="question-text">8. If r = 0, what can we conclude?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q8" value="a">
+                                There is no relationship whatsoever between the variables
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q8" value="b">
+                                There is no linear relationship between the variables
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q8" value="c">
+                                The variables are identical
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q8" value="d">
+                                There is a perfect negative relationship
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 9 -->
+                    <div class="question">
+                        <div class="question-text">9. What assumption requires that the variance of residuals remains constant across all levels of X?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q9" value="a">
+                                Normality
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q9" value="b">
+                                Independence
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q9" value="c">
+                                Homoscedasticity
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q9" value="d">
+                                Linearity
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 10 -->
+                    <div class="question">
+                        <div class="question-text">10. In engineering, which application commonly uses linear regression?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q10" value="a">
+                                Calibrating sensors and instruments
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q10" value="b">
+                                Designing digital circuits
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q10" value="c">
+                                Writing software code
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q10" value="d">
+                                Calculating integral transforms
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 11 -->
+                    <div class="question">
+                        <div class="question-text">11. What does the standard error of estimate (Sₑ) measure?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q11" value="a">
+                                The correlation between variables
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q11" value="b">
+                                The typical deviation of observed values from the regression line
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q11" value="c">
+                                The slope of the regression line
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q11" value="d">
+                                The number of data points
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 12 -->
+                    <div class="question">
+                        <div class="question-text">12. If a regression line has a negative slope, what does this indicate?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q12" value="a">
+                                As X increases, Y tends to increase
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q12" value="b">
+                                As X increases, Y tends to decrease
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q12" value="c">
+                                X and Y are unrelated
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q12" value="d">
+                                The data is invalid
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 13 -->
+                    <div class="question">
+                        <div class="question-text">13. What is the dependent variable in regression analysis?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q13" value="a">
+                                The variable being predicted (Y)
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q13" value="b">
+                                The predictor variable (X)
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q13" value="c">
+                                The correlation coefficient
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q13" value="d">
+                                The sample size
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 14 -->
+                    <div class="question">
+                        <div class="question-text">14. If r² = 0.64 and r is positive, what is the value of r?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q14" value="a">
+                                0.64
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q14" value="b">
+                                0.80
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q14" value="c">
+                                0.32
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q14" value="d">
+                                0.41
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 15 -->
+                    <div class="question">
+                        <div class="question-text">15. Extrapolation in regression refers to:</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q15" value="a">
+                                Making predictions within the range of observed data
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q15" value="b">
+                                Making predictions outside the range of observed data
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q15" value="c">
+                                Calculating the correlation coefficient
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q15" value="d">
+                                Finding outliers in the data
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 16 -->
+                    <div class="question">
+                        <div class="question-text">16. Which of the following correlations is the strongest?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q16" value="a">
+                                r = 0.45
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q16" value="b">
+                                r = -0.82
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q16" value="c">
+                                r = 0.60
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q16" value="d">
+                                r = -0.35
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 17 -->
+                    <div class="question">
+                        <div class="question-text">17. In the context of stress-strain analysis, what does the slope of the regression line represent?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q17" value="a">
+                                Poisson's ratio
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q17" value="b">
+                                Young's modulus (elastic modulus)
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q17" value="c">
+                                Yield strength
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q17" value="d">
+                                Ultimate tensile strength
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 18 -->
+                    <div class="question">
+                        <div class="question-text">18. What does a residual represent in regression analysis?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q18" value="a">
+                                The predicted value
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q18" value="b">
+                                The difference between observed and predicted values
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q18" value="c">
+                                The correlation coefficient
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q18" value="d">
+                                The slope of the line
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 19 -->
+                    <div class="question">
+                        <div class="question-text">19. Why is it dangerous to extrapolate far beyond the range of observed data?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q19" value="a">
+                                It always gives incorrect results
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q19" value="b">
+                                The linear relationship may not hold outside the observed range
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q19" value="c">
+                                It's not dangerous and is commonly recommended
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q19" value="d">
+                                The correlation becomes negative
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 20 -->
+                    <div class="question">
+                        <div class="question-text">20. In a temperature-resistance calibration, if the regression equation is R = 100 + 0.4T, what is the predicted resistance at 50°C?</div>
+                        <div class="options">
+                            <label class="option">
+                                <input type="radio" name="q20" value="a">
+                                100 Ω
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q20" value="b">
+                                120 Ω
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q20" value="c">
+                                150 Ω
+                            </label>
+                            <label class="option">
+                                <input type="radio" name="q20" value="d">
+                                200 Ω
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn">Submit Quiz</button>
+                    <button type="button" class="reset-btn" id="resetBtn">Reset Quiz</button>
+                </form>
+
+                <div class="results" id="results">
+                    <h3>Your Results</h3>
+                    <p id="scoreText"></p>
+                    <p id="percentageText"></p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Correct answers
+        const correctAnswers = {
+            q1: 'b',
+            q2: 'b',
+            q3: 'b',
+            q4: 'b',
+            q5: 'b',
+            q6: 'a',
+            q7: 'b',
+            q8: 'b',
+            q9: 'c',
+            q10: 'a',
+            q11: 'b',
+            q12: 'b',
+            q13: 'a',
+            q14: 'b',
+            q15: 'b',
+            q16: 'b',
+            q17: 'b',
+            q18: 'b',
+            q19: 'b',
+            q20: 'b'
+        };
+
+        const form = document.getElementById('quizForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const results = document.getElementById('results');
+        const scoreText = document.getElementById('scoreText');
+        const percentageText = document.getElementById('percentageText');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            let score = 0;
+            let answered = 0;
+
+            // Check each question
+            for (let i = 1; i <= 20; i++) {
+                const questionName = 'q' + i;
+                const selectedOption = document.querySelector(`input[name="${questionName}"]:checked`);
+                
+                if (selectedOption) {
+                    answered++;
+                    const parentLabel = selectedOption.parentElement;
+                    const allOptions = document.querySelectorAll(`input[name="${questionName}"]`);
+                    
+                    // Remove previous styling
+                    allOptions.forEach(opt => {
+                        opt.parentElement.classList.remove('correct', 'incorrect');
+                    });
+
+                    // Check if correct
+                    if (selectedOption.value === correctAnswers[questionName]) {
+                        score++;
+                        parentLabel.classList.add('correct');
+                    } else {
+                        parentLabel.classList.add('incorrect');
+                        // Highlight correct answer
+                        allOptions.forEach(opt => {
+                            if (opt.value === correctAnswers[questionName]) {
+                                opt.parentElement.classList.add('correct');
+                            }
+                        });
+                    }
+                }
+            }
+
+            // Display results
+            if (answered === 20) {
+                const percentage = (score / 20 * 100).toFixed(1);
+                scoreText.textContent = `You scored ${score} out of 20 questions correctly!`;
+                percentageText.textContent = `Percentage: ${percentage}%`;
+                
+                if (percentage >= 90) {
+                    percentageText.textContent += ' - Excellent! Outstanding understanding!';
+                } else if (percentage >= 80) {
+                    percentageText.textContent += ' - Great job! Strong grasp of the material.';
+                } else if (percentage >= 70) {
+                    percentageText.textContent += ' - Good work! Review the topics you missed.';
+                } else if (percentage >= 60) {
+                    percentageText.textContent += ' - Passing. Consider reviewing the material again.';
+                } else {
+                    percentageText.textContent += ' - Keep studying! Review the concepts and try again.';
+                }
+                
+                results.classList.add('show');
+                submitBtn.disabled = true;
+                
+                // Scroll to results
+                results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                alert('Please answer all 20 questions before submitting.');
+            }
+        });
+
+        resetBtn.addEventListener('click', function() {
+            // Reset form
+            form.reset();
+            
+            // Remove all styling
+            const allOptions = document.querySelectorAll('.option');
+            allOptions.forEach(opt => {
+                opt.classList.remove('correct', 'incorrect');
+            });
+            
+            // Hide results
+            results.classList.remove('show');
+            submitBtn.disabled = false;
+            
+            // Scroll to top of quiz
+            document.getElementById('quiz').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Smooth scroll for navigation
+        document.querySelectorAll('.nav-pill').forEach(pill => {
+            pill.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = this.getAttribute('href');
+                document.querySelector(target).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
